@@ -1,0 +1,61 @@
+---
+title: "ABNN example code"
+author: "SDMLAB"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    includes:
+      in_header: Markdown.tex
+fontsize: 12
+editor_options:
+  chunk_output_type: console
+---
+
+# Data generation
+
+```{r}
+rm(list = ls())
+source("main_code.R")
+source("sub_code.R")
+sample_size = 800
+number_predictors = 4
+set.seed(220927)
+x = matrix(0, sample_size, number_predictors)
+for (j in 1 : number_predictors)
+   x[, j] = runif(sample_size, 0, 1)
+f1 = g1(x[, 1])
+f2 = g2(x[, 2])
+f3 = g3(x[, 3])
+f4 = g4(x[, 4])
+f34 = g1(x[, 3] * x[, 4])
+f13 = g2((x[, 1] + x[, 3]) / 2)
+f12 = g3(x[, 1] * x[, 2])
+fs = cbind(f1, f2, f3, f4, f34, f13, f12)
+f = f1 + f2 + f3 + f4 + f34 + f13 + f12
+y = f + rnorm(sample_size, sd = 0.2546)
+```
+
+# ABNN fitting for a $\lambda_2$
+```{r}
+library(msir)
+nunber_lambdas = 30
+lambdag = 1e-04 * 5
+lambdas = exp(seq(log(1e-05), log(1), length = 30))
+number_nodes = 80
+# fitting
+fits = ABNN(predictors = x, response = y, number_hidden_nodes = number_nodes,
+            lambdas = lambdas, lambdag = lambdag)
+```
+
+# ABNN results
+```{r}
+# optimal fit
+(opt_index = which.min(fits$bic_list))
+opt_fit = fits[[opt_index]]
+# MSE
+mean((opt_fit$fitted_values - f)^2)
+# terms included in ABNN
+ABNN_terms(opt_fit)
+```
+
